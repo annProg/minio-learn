@@ -7,7 +7,7 @@ function restoreRepo() {
 }
 
 function Install() {
-	rpm -qa |grep $1 || yum install -y $1
+	rpm -qa |grep -w "$1" || yum install -y $1
 }
 
 # 恢复被移走的repo
@@ -111,13 +111,17 @@ sed -i 's/^SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 su -c 'cat /dev/zero |ssh-keygen -q -N ""' vagrant
 Install sshpass
 for node in `seq 1 3`;do
-	su -c "sshpass -p vagrant ssh-copy-id vagrant@node${node} -o StrictHostKeyChecking=no" vagrant
+	if [ nc -z node${node} 22 ];then
+		su -c "sshpass -p vagrant ssh-copy-id vagrant@node${node} -o StrictHostKeyChecking=no" vagrant
+	fi
 done
 
 # root 互相ssh
 cat /dev/zero |ssh-keygen -q -N ""
 for node in `seq 1 3`;do
-	sshpass -p vagrant ssh-copy-id node${node} -o StrictHostKeyChecking=no
+	if [ nc -z node${node} 22 ];then
+		sshpass -p vagrant ssh-copy-id node${node} -o StrictHostKeyChecking=no
+	fi
 done
 
 # 下载并启动 3 租户 minio
