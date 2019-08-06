@@ -1,8 +1,8 @@
 *.tar.gz
-node-1/
-node-2/
-node-3/
-node-4/
-node-5/
+node1/
+node2/
+node3/
+node4/
+node5/
 .vagrant
 package.box

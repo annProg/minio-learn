@@ -96,7 +96,7 @@ for sd in ${!DEVICE[@]};do
 		else
 			chattr +i $directory
 			mount -t xfs /dev/${sd}1 $directory
-		end
+		fi
 	fi
 done
 
