@@ -132,14 +132,61 @@ done
 
 # 下载并启动 3 租户 minio
 [ ! -f /usr/bin/minio ] && curl -s -L https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/bin/minio && chmod +x /usr/bin/minio
-export MINIO_ACCESS_KEY=minio1
-export MINIO_SECRET_KEY=passminio1
-minio server --address :9001 http://192.168.1.111/data1 http://192.168.1.112/data1 http://192.168.1.113/data1 http://192.168.1.111/data2 http://192.168.1.112/data2 http://192.168.1.113/data2
 
-export MINIO_ACCESS_KEY=minio2
-export MINIO_SECRET_KEY=passminio2
-minio server --address :9002 http://192.168.1.111/data3 http://192.168.1.112/data3 http://192.168.1.113/data3 http://192.168.1.111/data4 http://192.168.1.112/data4 http://192.168.1.113/data4
+function tenant() {
+	cat > /usr/lib/systemd/system/$1.service <<EOF
+[Unit]
+Description=Minio
+Documentation=https://docs.minio.io
+Wants=network-online.target
+After=network-online.target
+AssertFileIsExecutable=/usr/bin/minio
 
-export MINIO_ACCESS_KEY=minio3
-export MINIO_SECRET_KEY=passminio3
-minio server --address :9003 http://192.168.1.111/data5 http://192.168.1.112/data5 http://192.168.1.113/data5 http://192.168.1.111/data6 http://192.168.1.112/data6 http://192.168.1.113/data6
+[Service]
+WorkingDirectory=/usr/local
+
+User=minio-user
+Group=minio-user
+
+PermissionsStartOnly=true
+
+EnvironmentFile=-/etc/default/$1
+ExecStartPre=/bin/bash -c "[ -n \"${MINIO_VOLUMES}\" ] || echo \"Variable MINIO_VOLUMES not set in /etc/defaults/minio\""
+
+ExecStart=/usr/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
+
+# Let systemd restart this service only if it has ended with the clean exit code or signal.
+Restart=on-success
+
+StandardOutput=journal
+StandardError=inherit
+
+# Specifies the maximum file descriptor number that can be opened by this process
+LimitNOFILE=65536
+
+# Disable timeout logic and wait until process is stopped
+TimeoutStopSec=0
+
+# SIGTERM signal is used to stop Minio
+KillSignal=SIGTERM
+
+SendSIGKILL=no
+
+SuccessExitStatus=0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+	systemctl enable $1
+	systemctl start $1
+}
+
+cat > /etc/default/minio1 <<EOF
+MINIO_ACCESS_KEY=minio1
+MINIO_SECRET_KEY=passminio1
+MINIO_OPTIONS=--address :9001
+MINIO_VOLUMES=http://192.168.1.111/data1 http://192.168.1.112/data1 http://192.168.1.113/data1 http://192.168.1.111/data2 http://192.168.1.112/data2 http://192.168.1.113/data2
+EOF
+
+tenant minio1
