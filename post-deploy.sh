@@ -86,18 +86,23 @@ for sd in ${!DEVICE[@]};do
 	if [ ! -b /dev/${sd}1 ];then
 		echo -e "\033[31m$sd ${DEVICE[$sd]}[0m"
 		echo -e "n\np\n\n\n\nw" |fdisk /dev/$sd
-
 		mkfs.xfs /dev/${sd}1
-		directory=/${DEVICE[$sd]}
-		[ ! -d $directory ] && mkdir $directory
-		# 挂载点未挂载时不允许写入
-		if [ mountpoint -q $directory ];then
-			echo "$directory mounted"
-		else
-			chattr +i $directory
-			mount -t xfs /dev/${sd}1 $directory
-		fi
 	fi
+
+	directory=/${DEVICE[$sd]}
+	[ ! -d $directory ] && mkdir $directory
+
+	# 挂载点未挂载时不允许写入
+	mountpoint -q $directory
+	if [ $? -eq 0 ] ];then
+		echo "$directory mounted"
+	else
+		chattr +i $directory
+		mount -t xfs /dev/${sd}1 $directory
+	fi
+
+	# fstab
+	grep "^/dev/${sd}1" || echo "/dev/${sd}1 $directory xfs defaults 0 0" >> /etc/fstab
 done
 
 # 允许密码登录
@@ -110,30 +115,29 @@ sed -i 's/^SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 # 互相ssh
 su -c 'cat /dev/zero |ssh-keygen -q -N ""' vagrant
 Install sshpass
+Install nmap-ncat
 for node in `seq 1 3`;do
-	if [ nc -z node${node} 22 ];then
-		su -c "sshpass -p vagrant ssh-copy-id vagrant@node${node} -o StrictHostKeyChecking=no" vagrant
-	fi
+	nc -z node${node} 22 && \
+	su -c "sshpass -p vagrant ssh-copy-id vagrant@node${node} -o StrictHostKeyChecking=no" vagrant
 done
 
 # root 互相ssh
 cat /dev/zero |ssh-keygen -q -N ""
 for node in `seq 1 3`;do
-	if [ nc -z node${node} 22 ];then
-		sshpass -p vagrant ssh-copy-id node${node} -o StrictHostKeyChecking=no
-	fi
+	nc -z node${node} 22 && \
+	sshpass -p vagrant ssh-copy-id node${node} -o StrictHostKeyChecking=no
 done
 
 # 下载并启动 3 租户 minio
-curl -s -L https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/bin/minio && chmod +x /usr/bin/minio
+[ ! -f /usr/bin/minio ] && curl -s -L https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/bin/minio && chmod +x /usr/bin/minio
 export MINIO_ACCESS_KEY=minio1
 export MINIO_SECRET_KEY=minio1
-minio --conifg-dir /home/minio1 server --address :9001 http://192.168.1.111/data1 http://192.168.1.112/data1 http://192.168.1.113/data1 http://192.168.1.111/data2 http://192.168.1.112/data2 http://192.168.1.113/data2
+minio server --address :9001 http://192.168.1.111/data1 http://192.168.1.112/data1 http://192.168.1.113/data1 http://192.168.1.111/data2 http://192.168.1.112/data2 http://192.168.1.113/data2
 
 export MINIO_ACCESS_KEY=minio2
 export MINIO_SECRET_KEY=minio2
-minio --conifg-dir /home/minio1 server --address :9001 http://192.168.1.111/data3 http://192.168.1.112/data3 http://192.168.1.113/data3 http://192.168.1.111/data4 http://192.168.1.112/data4 http://192.168.1.113/data4
+minio server --address :9002 http://192.168.1.111/data3 http://192.168.1.112/data3 http://192.168.1.113/data3 http://192.168.1.111/data4 http://192.168.1.112/data4 http://192.168.1.113/data4
 
 export MINIO_ACCESS_KEY=minio3
 export MINIO_SECRET_KEY=minio3
-minio --conifg-dir /home/minio1 server --address :9001 http://192.168.1.111/data5 http://192.168.1.112/data5 http://192.168.1.113/data5 http://192.168.1.111/data6 http://192.168.1.112/data6 http://192.168.1.113/data6
+minio server --address :9003 http://192.168.1.111/data5 http://192.168.1.112/data5 http://192.168.1.113/data5 http://192.168.1.111/data6 http://192.168.1.112/data6 http://192.168.1.113/data6
