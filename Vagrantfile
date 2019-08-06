@@ -8,9 +8,12 @@ BOX='centos-sata/7'
     config.vm.define :"node#{i}" do |node|
       node.vm.box = BOX
       #node.vm.box_url = BOX_URL
-      node.vm.network :private_network, ip: "192.168.1.#{i+100}"
+      node.vm.network :private_network, ip: "192.168.1.#{i+110}"
       node.vm.hostname = "node#{i}"
-      node.vm.synced_folder ".", "/vagrant"
+      node.vm.synced_folder ".", "/vagrant", disabled: true
+      if Vagrant.has_plugin?("vagrant-vbguest")
+        node.vbguest.auto_update = false
+      end
       node.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
       node.vm.provision "shell", path: "post-deploy.sh" ,run: "always"
       #node.vm.provision "puppet",run: "always" do |puppet|

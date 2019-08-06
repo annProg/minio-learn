@@ -17,6 +17,8 @@ restoreRepo epel
 # 安装 常用/必要 软件
 Install wget
 Install vim
+# chattr
+Install e2fsprogs
 # 确保你的包管理器安装了优先级/首选项包且已启用。在 CentOS 上你也许得安装 EPEL ，在 RHEL 上你也许得启用可选软件库。
 Install epel-release
 
@@ -94,7 +96,7 @@ for sd in ${!DEVICE[@]};do
 
 	# 挂载点未挂载时不允许写入
 	mountpoint -q $directory
-	if [ $? -eq 0 ] ];then
+	if [ $? -eq 0 ];then
 		echo "$directory mounted"
 	else
 		chattr +i $directory
@@ -131,13 +133,13 @@ done
 # 下载并启动 3 租户 minio
 [ ! -f /usr/bin/minio ] && curl -s -L https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/bin/minio && chmod +x /usr/bin/minio
 export MINIO_ACCESS_KEY=minio1
-export MINIO_SECRET_KEY=minio1
+export MINIO_SECRET_KEY=passminio1
 minio server --address :9001 http://192.168.1.111/data1 http://192.168.1.112/data1 http://192.168.1.113/data1 http://192.168.1.111/data2 http://192.168.1.112/data2 http://192.168.1.113/data2
 
 export MINIO_ACCESS_KEY=minio2
-export MINIO_SECRET_KEY=minio2
+export MINIO_SECRET_KEY=passminio2
 minio server --address :9002 http://192.168.1.111/data3 http://192.168.1.112/data3 http://192.168.1.113/data3 http://192.168.1.111/data4 http://192.168.1.112/data4 http://192.168.1.113/data4
 
 export MINIO_ACCESS_KEY=minio3
-export MINIO_SECRET_KEY=minio3
+export MINIO_SECRET_KEY=passminio3
 minio server --address :9003 http://192.168.1.111/data5 http://192.168.1.112/data5 http://192.168.1.113/data5 http://192.168.1.111/data6 http://192.168.1.112/data6 http://192.168.1.113/data6
