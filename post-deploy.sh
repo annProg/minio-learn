@@ -134,6 +134,7 @@ done
 [ ! -f /usr/bin/minio ] && curl -s -L https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/bin/minio && chmod +x /usr/bin/minio
 
 function tenant() {
+	id $1 || useradd $1
 	cat > /usr/lib/systemd/system/$1.service <<EOF
 [Unit]
 Description=Minio
@@ -145,8 +146,8 @@ AssertFileIsExecutable=/usr/bin/minio
 [Service]
 WorkingDirectory=/usr/local
 
-User=minio-user
-Group=minio-user
+User=$1
+Group=$1
 
 PermissionsStartOnly=true
 
