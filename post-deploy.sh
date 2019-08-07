@@ -92,7 +92,7 @@ for sd in ${!DEVICE[@]};do
 	fi
 
 	directory=/minio/${DEVICE[$sd]}
-	[ ! -d $directory ] && mkdir $directory
+	[ ! -d $directory ] && mkdir -p $directory
 
 	# 挂载点未挂载时不允许写入
 	mountpoint -q $directory
@@ -152,9 +152,9 @@ Group=$1
 PermissionsStartOnly=true
 
 EnvironmentFile=-/etc/default/$1
-ExecStartPre=/bin/bash -c "[ -n \"${MINIO_VOLUMES}\" ] || echo \"Variable MINIO_VOLUMES not set in /etc/defaults/$1\""
+ExecStartPre=/bin/bash -c "[ -n \"\${MINIO_VOLUMES}\" ] || echo \"Variable MINIO_VOLUMES not set in /etc/default/$1\""
 
-ExecStart=/usr/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
+ExecStart=/usr/bin/minio server \$MINIO_OPTS \$MINIO_VOLUMES
 
 # Let systemd restart this service only if it has ended with the clean exit code or signal.
 Restart=on-success
@@ -186,8 +186,9 @@ EOF
 cat > /etc/default/minio1 <<EOF
 MINIO_ACCESS_KEY=minio1
 MINIO_SECRET_KEY=passminio1
-MINIO_OPTIONS=--address :9001
-MINIO_VOLUMES=http://192.168.1.111/data1 http://192.168.1.112/data1 http://192.168.1.113/data1 http://192.168.1.111/data2 http://192.168.1.112/data2 http://192.168.1.113/data2
+MINIO_OPTS="--address :9001"
+MINIO_VOLUMES="http://192.168.1.111/minio/data1 http://192.168.1.112/minio/data1 http://192.168.1.113/minio/data1 http://192.168.1.111/minio/data2 http://192.168.1.112/minio/data2 http://192.168.1.113/minio/data2"
 EOF
 
+chown -R minio1.minio1 /minio/data{1..2}
 tenant minio1
