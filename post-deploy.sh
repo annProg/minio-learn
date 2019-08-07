@@ -7,7 +7,7 @@ function restoreRepo() {
 }
 
 function Install() {
-	rpm -qa |grep -w "$1" || yum install -y $1
+	rpm -qi "$1" || yum install -y $1
 }
 
 # 恢复被移走的repo
@@ -91,7 +91,7 @@ for sd in ${!DEVICE[@]};do
 		mkfs.xfs /dev/${sd}1
 	fi
 
-	directory=/${DEVICE[$sd]}
+	directory=/minio/${DEVICE[$sd]}
 	[ ! -d $directory ] && mkdir $directory
 
 	# 挂载点未挂载时不允许写入
@@ -152,7 +152,7 @@ Group=$1
 PermissionsStartOnly=true
 
 EnvironmentFile=-/etc/default/$1
-ExecStartPre=/bin/bash -c "[ -n \"${MINIO_VOLUMES}\" ] || echo \"Variable MINIO_VOLUMES not set in /etc/defaults/minio\""
+ExecStartPre=/bin/bash -c "[ -n \"${MINIO_VOLUMES}\" ] || echo \"Variable MINIO_VOLUMES not set in /etc/defaults/$1\""
 
 ExecStart=/usr/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
 
