@@ -104,7 +104,7 @@ for sd in ${!DEVICE[@]};do
 	fi
 
 	# fstab
-	grep "^/dev/${sd}1" || echo "/dev/${sd}1 $directory xfs defaults 0 0" >> /etc/fstab
+	grep "^/dev/${sd}1" /etc/fstab || echo "/dev/${sd}1 $directory xfs defaults 0 0" >> /etc/fstab
 done
 
 # 允许密码登录
